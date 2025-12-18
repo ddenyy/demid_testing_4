@@ -1,0 +1,67 @@
+name: API tests (Assembly_PC)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Клонирование репозитория
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Установка Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 3. Проверка версий (для отладки)
+      - name: Show versions
+        run: |
+          docker --version
+          docker compose version
+          python --version
+
+      # 4. Установка зависимостей тестов
+      - name: Install test dependencies
+        run: |
+          pip install requests
+
+      # 5. Поднятие сервисов
+      - name: Start services with docker-compose
+        run: |
+          docker compose up -d
+
+      # 6. Ожидание grpcwebproxy
+      - name: Wait for grpcwebproxy
+        run: |
+          echo "Ожидание grpcwebproxy на 8080..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8080 > /dev/null; then
+              echo "grpcwebproxy доступен"
+              exit 0
+            fi
+            echo "ожидание..."
+            sleep 2
+          done
+          echo "grpcwebproxy не поднялся вовремя"
+          exit 1
+
+      # 7. Запуск API-тестов
+      - name: Run API tests
+        run: |
+          python test_api.py
+
+      # 8. Остановка контейнеров (всегда)
+      - name: Stop services
+        if: always()
+        run: |
+          docker compose down
