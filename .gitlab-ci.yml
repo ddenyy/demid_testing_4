@@ -1,0 +1,50 @@
+stages:
+  - test
+
+variables:
+  DOCKER_TLS_CERTDIR: ""
+
+api_tests:
+  stage: test
+  image: docker:26.1.4
+  services:
+    - docker:26.1.4-dind
+
+  before_script:
+    # Установка docker-compose
+    - apk add --no-cache docker-compose python3 py3-pip curl
+
+    # Проверка версий (удобно для отладки)
+    - docker --version
+    - docker-compose --version
+    - python3 --version
+
+    # Установка зависимостей тестов
+    - pip install requests
+
+  script:
+    # Поднимаем систему
+    - docker-compose up -d
+
+    # Ждём grpcwebproxy
+    - echo "Ожидание grpcwebproxy на 8080..."
+    - |
+      for i in $(seq 1 30); do
+        if curl -s http://localhost:8080 > /dev/null; then
+          echo "grpcwebproxy доступен"
+          break
+        fi
+        echo "ожидание..."
+        sleep 2
+      done
+
+    # Запуск тестов
+    - python3 test_api.py
+
+  after_script:
+    # Гарантированная очистка
+    - docker-compose down
+
+  only:
+    - merge_requests
+    - main

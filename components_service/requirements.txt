@@ -1,0 +1,4 @@
+grpcio-tools~=1.30
+bcrypt
+sqlalchemy >= 2.0.25
+psycopg2-binary

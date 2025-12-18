@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  db:
+    build: user_db/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
+  app:
+    build: auth_service/
+    ports:
+      - "50051:50051"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  grpcwebproxy:
+    build: grpcwebproxy/
+    ports:
+      - "8080:8080"
+    depends_on:
+      app:
+        condition: service_started
+      component_app:
+        condition: service_started
+
+  fluuter_web:
+    build: appui/
+    ports:
+      - "8081:80"
+
+  components_db:
+    build: components_db/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  component_app:
+    build: components_service/
+    ports:
+      - "50052:50052"
+    depends_on:
+      components_db:
+        condition: service_healthy
+        
+
+  

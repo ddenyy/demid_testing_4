@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+message Empty {}
+
+message ComponentRequest {
+    string name = 1;
+    string type = 2;
+    string manufacturer = 3;
+    string issue = 4;
+    string spec_json = 5;
+}
+
+message ComponentResponse {
+    string messge = 1;
+}
+
+message Component {
+    int32 id = 1;
+    string name = 2;
+    string type = 3;
+    string manufacturer = 4;
+    string issue = 5;
+    string spec_json = 6;
+}
+
+message ComponentList {
+    repeated Component components = 1;
+}
+
+service ComponentSevice {
+    rpc GetAllComponents(Empty) returns (ComponentList);
+    rpc AddComponent(ComponentRequest) returns (ComponentResponse);
+    rpc LoadComponentsFromJson(Empty) returns (ComponentResponse); 
+}
