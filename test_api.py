@@ -16,13 +16,17 @@ import requests
 import json
 import time
 import sys
+import os
 
 
 # -----------------------------
 # Конфигурация
 # -----------------------------
 
-GRPCWEB_PROXY_URL = "http://localhost:8080"
+GRPCWEB_PROXY_URL = os.getenv(
+    "GRPCWEB_PROXY_URL",
+    "http://localhost:8080"
+)
 
 AUTH_REGISTER_URL = f"{GRPCWEB_PROXY_URL}/AuthService/Register"
 AUTH_LOGIN_URL = f"{GRPCWEB_PROXY_URL}/AuthService/Login"
@@ -30,7 +34,6 @@ AUTH_LOGIN_URL = f"{GRPCWEB_PROXY_URL}/AuthService/Login"
 COMP_GET_ALL_URL = f"{GRPCWEB_PROXY_URL}/ComponentSevice/GetAllComponents"
 COMP_ADD_URL = f"{GRPCWEB_PROXY_URL}/ComponentSevice/AddComponent"
 COMP_LOAD_JSON_URL = f"{GRPCWEB_PROXY_URL}/ComponentSevice/LoadComponentsFromJson"
-
 
 HEADERS = {
     "Content-Type": "application/json",
@@ -41,6 +44,20 @@ HEADERS = {
 # -----------------------------
 # Вспомогательные функции
 # -----------------------------
+
+def check_server_available(timeout=3):
+    """
+    Проверка доступности grpcwebproxy
+    """
+    print("Проверка доступности grpcwebproxy...")
+    try:
+        requests.get(GRPCWEB_PROXY_URL, timeout=timeout)
+        print("OK: grpcwebproxy доступен")
+        return True
+    except requests.exceptions.RequestException:
+        print("ERROR: grpcwebproxy недоступен")
+        return False
+
 
 def send_request(url, payload=None, timeout=5):
     """
@@ -231,8 +248,13 @@ def test_load_components_from_json():
 # -----------------------------
 # Запуск всех тестов
 # -----------------------------
+
 def run_tests():
     print("Запуск автоматизированных тестов API\n")
+
+    if not check_server_available():
+        print("Тестирование прервано: сервис недоступен")
+        return 1
 
     tests = [
         test_register_success,
